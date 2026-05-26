@@ -57,8 +57,8 @@ module Prismic
         # without forgetting to frame the BlockGroup objects right if needed
         groups.map{|group|
           html = group.blocks.map { |b|
-            b.as_html(link_resolver, html_serializer)
-          }.join
+            b&.as_html(link_resolver, html_serializer)
+          }.compact.join
           case group.kind
           when "ol"
             %(<ol>#{html}</ol>)
