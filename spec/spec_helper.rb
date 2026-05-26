@@ -10,6 +10,12 @@ end
 RSpec.configure do |c|
   # Stop after the first failure
   # c.fail_fast = true
+  c.expect_with :rspec do |expectations|
+    expectations.syntax = [:should, :expect]
+  end
+  c.mock_with :rspec do |mocks|
+    mocks.syntax = [:should, :expect]
+  end
 end
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')

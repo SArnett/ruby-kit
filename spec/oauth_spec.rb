@@ -68,6 +68,7 @@ describe 'OAuth' do
   end
 
   describe "Private API" do
+    before { skip "privaterepository.prismic.io has been deleted" }
 
     PRIVATE_URL = "https://privaterepository.prismic.io/api"
 

@@ -8,11 +8,15 @@ describe 'predicates' do
     @api = Prismic.api('https://micro.prismic.io/api', nil)
     @master_ref = @api.master_ref
     @link_resolver = Prismic.link_resolver('master'){|doc_link| "http://localhost/#{doc_link.id}" }
-    @boolean_api = Prismic.api("https://a-bool.prismic.io/api", nil)
-    @boolean_api_master_ref = @boolean_api.master_ref
   end
 
-  describe 'boolean query' do 
+  describe 'boolean query' do
+    before do
+      skip "a-bool.prismic.io repository has been deleted"
+      @boolean_api = Prismic.api("https://a-bool.prismic.io/api", nil)
+      @boolean_api_master_ref = @boolean_api.master_ref
+    end
+
     it "can query a boolean field with value true" do
       form = @boolean_api.form('everything').query(['at', 'my.bools.set_to_true', true])
       form.data['q'].should == ['[[:d = at(my.bools.set_to_true, true)]]']

@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 require 'cgi'
 require 'time'
 
@@ -9,24 +7,24 @@ module Prismic
       @@warned_unknown_type = []
       def parsers
         @parsers ||= {
-          'Link.document'  => method(:document_link_parser),
-          'Text'           => method(:text_parser),
-          'Link.web'       => method(:web_link_parser),
-          'Link.image'     => method(:image_link_parser),
-          'Link.file'      => method(:file_link_parser),
-          'Date'           => method(:date_parser),
-          'Timestamp'      => method(:timestamp_parser),
-          'Number'         => method(:number_parser),
-          'Embed'          => method(:embed_parser),
-          'GeoPoint'       => method(:geo_point_parser),
-          'Image'          => method(:image_parser),
-          'Color'          => method(:color_parser),
+          'Link.document' => method(:document_link_parser),
+          'Text' => method(:text_parser),
+          'Link.web' => method(:web_link_parser),
+          'Link.image' => method(:image_link_parser),
+          'Link.file' => method(:file_link_parser),
+          'Date' => method(:date_parser),
+          'Timestamp' => method(:timestamp_parser),
+          'Number' => method(:number_parser),
+          'Embed' => method(:embed_parser),
+          'GeoPoint' => method(:geo_point_parser),
+          'Image' => method(:image_parser),
+          'Color' => method(:color_parser),
           'StructuredText' => method(:structured_text_parser),
-          'Select'         => method(:select_parser),
-          'Multiple'       => method(:multiple_parser),
-          'Group'          => method(:group_parser),
-          'SliceZone'      => method(:slices_parser),
-          'Separator'      => method(:separator_parser),
+          'Select' => method(:select_parser),
+          'Multiple' => method(:multiple_parser),
+          'Group' => method(:group_parser),
+          'SliceZone' => method(:slices_parser),
+          'Separator' => method(:separator_parser),
           'IntegrationFields' => method(:integration_fields_parser),
           'Boolean' => method(:boolean_field_parser)
         }
@@ -36,7 +34,7 @@ module Prismic
         Prismic::Fragments::IntegrationField.new(json['value'])
       end
 
-      def boolean_field_parser(json) 
+      def boolean_field_parser(json)
         Prismic::Fragments::BooleanField.new(json['value'])
       end
 
@@ -45,13 +43,13 @@ module Prismic
         type = doc['type']
         fragments = {}
         if doc['data'] and doc['data'][type]
-          fragments = Hash[doc['data'][type].map { |name, fragment|
+          fragments = Hash[doc['data'][type].map do |name, fragment|
             if fragment.is_a? Array
               [name, multiple_parser(fragment)]
             else
               [name, parsers[fragment['type']].call(fragment)]
             end
-          }]
+          end]
         end
         Prismic::Fragments::DocumentLink.new(
           doc['id'],
@@ -62,13 +60,15 @@ module Prismic
           doc['lang'],
           fragments,
           json['value']['isBroken'],
-          json['value']['target'] ? json['value']['target'] : nil)
+          json['value']['target'] || nil
+        )
       end
 
       def image_link_parser(json)
         Prismic::Fragments::ImageLink.new(
           json['value']['image']['url'],
-          json['value']['target'] ? json['value']['target'] : nil)
+          json['value']['target'] || nil
+        )
       end
 
       def file_link_parser(json)
@@ -77,14 +77,15 @@ module Prismic
           json['value']['file']['name'],
           json['value']['file']['kind'],
           json['value']['file']['size'],
-          json['value']['target'] ? json['value']['target'] : nil )
+          json['value']['target'] || nil
+        )
       end
 
       def text_parser(json)
         Prismic::Fragments::Text.new(json['value'])
       end
 
-      def separator_parser(json)
+      def separator_parser(_json)
         Prismic::Fragments::Separator.new('')
       end
 
@@ -141,7 +142,8 @@ module Prismic
           when 'strong'
             Prismic::Fragments::StructuredText::Span::Strong.new(span['start'], span['end'])
           when 'hyperlink'
-            Prismic::Fragments::StructuredText::Span::Hyperlink.new(span['start'], span['end'], link_parser(span['data']))
+            Prismic::Fragments::StructuredText::Span::Hyperlink.new(span['start'], span['end'],
+                                                                    link_parser(span['data']))
           else
             label = span['data'] && span['data']['label']
             Prismic::Fragments::StructuredText::Span::Label.new(span['start'], span['end'], label)
@@ -151,14 +153,14 @@ module Prismic
         blocks = json['value'].map do |block|
           case block['type']
           when 'paragraph'
-            spans = block['spans'].map {|span| span_parser(span) }
+            spans = block['spans'].map { |span| span_parser(span) }
             Prismic::Fragments::StructuredText::Block::Paragraph.new(block['text'], spans, block['label'])
           when 'preformatted'
-            spans = block['spans'].map {|span| span_parser(span) }
+            spans = block['spans'].map { |span| span_parser(span) }
             Prismic::Fragments::StructuredText::Block::Preformatted.new(block['text'], spans, block['label'])
           when /^heading(\d+)$/
-            heading = $1
-            spans = block['spans'].map {|span| span_parser(span) }
+            heading = ::Regexp.last_match(1)
+            spans = block['spans'].map { |span| span_parser(span) }
             Prismic::Fragments::StructuredText::Block::Heading.new(
               block['text'],
               spans,
@@ -166,19 +168,19 @@ module Prismic
               block['label']
             )
           when 'o-list-item'
-            spans = block['spans'].map {|span| span_parser(span) }
+            spans = block['spans'].map { |span| span_parser(span) }
             Prismic::Fragments::StructuredText::Block::ListItem.new(
               block['text'],
               spans,
-              true,  # ordered
+              true, # ordered
               block['label']
             )
           when 'list-item'
-            spans = block['spans'].map {|span| span_parser(span) }
+            spans = block['spans'].map { |span| span_parser(span) }
             Prismic::Fragments::StructuredText::Block::ListItem.new(
               block['text'],
               spans,
-              false,  # unordered
+              false, # unordered
               block['label']
             )
           when 'image'
@@ -192,9 +194,10 @@ module Prismic
               block['label']
             )
           else
-            puts "Unknown bloc type: #{block['type']}"
+            warn "Unknown bloc type: #{block['type']}"
+            nil
           end
-        end
+        end.compact
         Prismic::Fragments::StructuredText.new(blocks)
       end
 
@@ -208,7 +211,7 @@ module Prismic
       def group_parser(json)
         fragment_list_array = []
         json['value'].each do |group|
-          fragments = Hash[ group.map {|name, fragment| [name, parsers[fragment['type']].call(fragment)] }]
+          fragments = Hash[group.map { |name, fragment| [name, parsers[fragment['type']].call(fragment)] }]
           fragment_list_array << Prismic::Fragments::GroupDocument.new(fragments)
         end
         Prismic::Fragments::Group.new(fragment_list_array)
@@ -229,7 +232,7 @@ module Prismic
               non_repeat[fragment_key] = fragment_parser(fragment_value)
             end
 
-            repeat = group_parser({ 'type' => 'Group', 'value' => data['repeat']})
+            repeat = group_parser({ 'type' => 'Group', 'value' => data['repeat'] })
 
             slices << Prismic::Fragments::CompositeSlice.new(slice_type, slice_label, non_repeat, repeat)
           end
@@ -250,41 +253,42 @@ module Prismic
       end
 
       def document_parser(json)
-        data_json = json['data'].values.first  # {"doc_type": data}
+        data_json = json['data'].values.first # {"doc_type": data}
 
         # Removing the unknown types + sending a warning, once
-        data_json.select!{ |_, fragment|
+        data_json.select! do |_, fragment|
           known_type = fragment.is_a?(Array) || parsers.include?(fragment['type'])
           if !known_type && !@@warned_unknown_type.include?(fragment['type'])
             warn "Type #{fragment['type']} is unknown, fragment was skipped; perhaps you should update your prismic.io gem?"
             @@warned_unknown_type << fragment['type']
           end
           known_type
-        }
+        end
 
         alternate_languages = nil
         if json.key?('alternate_languages')
-          alternate_languages = Hash[json['alternate_languages'].map { |doc|
+          alternate_languages = Hash[json['alternate_languages'].map do |doc|
             [doc['lang'], alternate_language_parser(doc)]
-          }]
+          end]
         end
 
-        fragments = Hash[data_json.map { |name, fragment|
+        fragments = Hash[data_json.map do |name, fragment|
           [name, fragment_parser(fragment)]
-        }]
+        end]
 
         Prismic::Document.new(
-            json['id'],
-            json['uid'],
-            json['type'],
-            json['href'],
-            json['tags'],
-            json['slugs'].map { |slug| CGI.unescape(slug) },
-            json['first_publication_date'] && Time.parse(json['first_publication_date']),
-            json['last_publication_date'] && Time.parse(json['last_publication_date']),
-            json['lang'],
-            alternate_languages,
-            fragments)
+          json['id'],
+          json['uid'],
+          json['type'],
+          json['href'],
+          json['tags'],
+          json['slugs'].map { |slug| CGI.unescape(slug) },
+          json['first_publication_date'] && Time.parse(json['first_publication_date']),
+          json['last_publication_date'] && Time.parse(json['last_publication_date']),
+          json['lang'],
+          alternate_languages,
+          fragments
+        )
       end
 
       def results_parser(results)
@@ -295,6 +299,7 @@ module Prismic
 
       def response_parser(documents)
         raise FormSearchException, "Error : #{documents['error']}" if documents['error']
+
         Prismic::Response.new(
           documents['page'],
           documents['results_per_page'],
